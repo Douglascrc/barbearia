@@ -8,7 +8,7 @@ const Search = () => {
     return (
         <div className="flex">
             <Input placeholder="Busque uma barbearia"/>
-            <Button variant={"default"} size={"icon"}  >
+            <Button className="ml-2"variant={"default"} size={"icon"}  >
                 <SearchIcon size={18}/>
             </Button>
         </div>
