@@ -1,6 +1,8 @@
+import { format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
+import { ptBR } from "date-fns/locale";
 
 const BookingItem = () => {
     return ( 
@@ -21,9 +23,12 @@ const BookingItem = () => {
                 </div>
 
                 <div className="flex flex-col justify-center px-3 items-center border-l ">
-                    <p className="text-sm">Mês</p>
-                    <p className="text-xl">dia</p>
-                    <p className="text-sm">Horário</p>
+                    <p className="text-sm"> {format(new Date(), "MMMM", {
+            locale:ptBR,
+            })} </p>
+                    <p className="text-xl">{format(new Date(), "dd", {
+            locale:ptBR,})}</p>
+                    <p className="text-sm">{format( new Date(), "HH:mm")}</p>
                 </div>
             </CardContent>
         </Card>
