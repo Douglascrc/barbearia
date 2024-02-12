@@ -6,7 +6,7 @@ import BookingItem from "../components/booking-item";
 import BarbershopItem from "./components/barbershop-item";
 import { db } from "../lib/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 
 export default async function Home() {
@@ -48,8 +48,9 @@ export default async function Home() {
           <Search/>
         </div>
 
-        <h2 className="text-sm  mb-3 pl-5 uppercase">Agendamentos</h2>
-          <div className="mt-6 px-5">
+        
+        <div className="mt-6 px-5">
+            <h2 className="text-sm  mb-1 uppercase">Agendamentos</h2>
             <BookingItem /> 
         </div>
 
