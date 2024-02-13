@@ -8,27 +8,27 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 
 const SideMenu = () => {
-    const {data,status} = useSession()
+    const {data} = useSession()
 
     const handleLogoutClick = () => signOut()
 
     const handleLoginClick = () => signIn("google") 
 
     return ( <div>
-        <SheetHeader className="text-left border-secondary border-b border-solid">
-        <SheetTitle>Menu</SheetTitle>
+        <SheetHeader className="text-left border-secondary border-b border-solid p-3">
+            <SheetTitle>Menu</SheetTitle>
         </SheetHeader>
 
-    {data?.user ? (<div>
+    {data?.user ? (<div className="flex justify-between px-5 py-6">
       <div className="flex gap-3 items-center">
         <Avatar>
-            <AvatarImage src={data.user?.image ?? ""}/>
+            <AvatarImage className="rounded-full w-10" src={data.user?.image ?? ""}/>
         </Avatar>
 
         <h2 className="font-bold">{data.user.name}</h2>
       </div>
 
-      <Button>
+      <Button variant="secondary" size="icon">
         <LogOutIcon onClick={handleLogoutClick}/>
       </Button>
 
@@ -36,7 +36,7 @@ const SideMenu = () => {
 
         <div className="flex items-center gap-3">
             <UserIcon size={32}/>
-            <h2>Olá, faça seu login!</h2>
+            <h2 className="font-bold">Olá, faça seu login!</h2>
         </div>
 
         <Button onClick={handleLoginClick} variant="secondary" className="w-full justify-start">
