@@ -6,12 +6,16 @@ import { Card, CardContent } from "@/app/components/ui/card";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/app/components/ui/sheet";
 import { Barbershop, Service } from "@prisma/client";
 import { ptBR } from "date-fns/locale";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { generateDayTimeList } from "../helpers/hours";
-import { time } from "console";
-import { format } from "date-fns";
+import { format, setHours, setMinutes } from "date-fns";
+import { saveBooking } from "../actions/save-booking";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+
 
 interface serviceItemProps {
     service: Service
@@ -20,9 +24,57 @@ interface serviceItemProps {
 }
 
 const ServiceItem = ({service, barbershop, isAuthenticator}: serviceItemProps) => {
+    const router = useRouter()
+
+    const {data} = useSession()
+
     const [hour, setHour] = React.useState<string | undefined>()
 
     const [date, setDate] = React.useState<Date | undefined>(undefined)
+
+    const [submitLoading, setSubmitLoading] = useState(false)
+
+    const [sheetIsOpen, setSheetIsOpen] = useState(false)
+
+    const handleBookingSubmit = async () => {
+        setSubmitLoading(true)
+        try{
+            if(!hour || !date || !data?.user) {
+                return
+            }
+
+            const dateHour = Number(hour.split(":")[0])
+            const dateMinutes = Number(hour.split(":")[0])
+
+            const newDate = setMinutes(setHours(date,dateHour), dateMinutes)
+
+            await saveBooking({
+                serviceId: service.id,
+                barbershopId: barbershop.id,
+                date: newDate,
+                userId: (data.user as any).id
+            })
+
+            setSheetIsOpen(false)
+            setHour(undefined);
+            setDate(undefined);
+            toast("Reserva realizada com sucesso!",{
+                description: format(newDate,"'Para' dd 'de' MMMM 'às' HH ':' mm'.'",{ 
+                locale:ptBR
+                }),
+                action:{ 
+                    label:"Visualizar",
+                onClick: () => router.push("/bookings"), 
+                },
+            })
+        }
+        catch(error) {
+            console.error(error)
+        } 
+        finally {
+            setSubmitLoading(false)
+        }
+    }
 
     const handleBookingClick = () => {
         if (!isAuthenticator) 
@@ -65,7 +117,7 @@ const ServiceItem = ({service, barbershop, isAuthenticator}: serviceItemProps) =
                             }).format(Number(service.price))}
                             </p>                           
 
-                            <Sheet>
+                            <Sheet open={sheetIsOpen} onOpenChange={setSheetIsOpen}>
                                 <SheetTrigger asChild>
                                     <Button variant="secondary" onClick={handleBookingClick}>
                                         Reservar
@@ -144,8 +196,9 @@ const ServiceItem = ({service, barbershop, isAuthenticator}: serviceItemProps) =
                                         </CardContent>
                                     </Card>
                                    <SheetFooter className="px-5">
-                                        <Button disabled={!hour}>
-                                            Confirmar Reserva
+                                   <Button onClick={handleBookingSubmit} disabled={!hour || !date || submitLoading}>
+                                            {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Confirmar Reserva                                           
                                         </Button>
                                    </SheetFooter>
                                     
