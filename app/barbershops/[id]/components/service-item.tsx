@@ -2,47 +2,54 @@
 
 import { Button } from "@/app/components/ui/button";
 import { Calendar } from "@/app/components/ui/calendar";
+import { Toaster } from "@/app/components/ui/sonner"
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/app/components/ui/sheet";
-import { Barbershop, Service } from "@prisma/client";
+import { Barbershop, Booking, Service } from "@prisma/client";
 import { ptBR } from "date-fns/locale";
 import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { generateDayTimeList } from "../helpers/hours";
 import { format, setHours, setMinutes } from "date-fns";
 import { saveBooking } from "../actions/save-booking";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { getDayBookings } from "../actions/get-day-bookings";
+import BookingInfo from "@/app/components/booking-info";
 
 
 interface serviceItemProps {
-    service: Service
-    isAuthenticator : boolean
     barbershop : Barbershop
+    service: Service
+    isAuthenticated : boolean
 }
 
-const ServiceItem = ({service, barbershop, isAuthenticator}: serviceItemProps) => {
+const ServiceItem = ({service, barbershop, isAuthenticated}: serviceItemProps) => {
     const router = useRouter()
 
     const {data} = useSession()
 
-    const [hour, setHour] = React.useState<string | undefined>()
+    const [hour, setHour] = useState<string | undefined>()
 
-    const [date, setDate] = React.useState<Date | undefined>(undefined)
+    const [date, setDate] = useState<Date | undefined>(undefined)
 
-    const [submitLoading, setSubmitLoading] = useState(false)
+    const [submitIsLoading, setSubmitIsLoading] = useState(false)
 
     const [sheetIsOpen, setSheetIsOpen] = useState(false)
 
+    const [dayBookings, setDayBookings] = useState<Booking[]>([])
+
     const handleBookingSubmit = async () => {
-        setSubmitLoading(true)
+
+        setSubmitIsLoading(true)
+
         try{
             if(!hour || !date || !data?.user) {
                 return
             }
-
+            
             const dateHour = Number(hour.split(":")[0])
             const dateMinutes = Number(hour.split(":")[0])
 
@@ -53,8 +60,7 @@ const ServiceItem = ({service, barbershop, isAuthenticator}: serviceItemProps) =
                 barbershopId: barbershop.id,
                 date: newDate,
                 userId: (data.user as any).id
-            })
-
+            })   
             setSheetIsOpen(false)
             setHour(undefined);
             setDate(undefined);
@@ -67,38 +73,74 @@ const ServiceItem = ({service, barbershop, isAuthenticator}: serviceItemProps) =
                 onClick: () => router.push("/bookings"), 
                 },
             })
+            
         }
         catch(error) {
             console.error(error)
         } 
         finally {
-            setSubmitLoading(false)
+            setSubmitIsLoading(false)
+            
         }
     }
 
+    useEffect(() => {
+        if (!date) {
+          return;
+        }
+    
+        const refreshAvailableHours = async () => {
+          const _dayBookings = await getDayBookings(barbershop.id, date);
+          setDayBookings(_dayBookings);
+        };
+    
+        refreshAvailableHours();
+    }, [date, barbershop.id]);
+    
+    const handleDateClick = (date: Date | undefined) => {
+        setDate(date);
+        setHour(undefined);
+    };
+    
+    const handleHourClick = (time: string) => {
+        setHour(time);
+    };
+
+    const timeList = useMemo(() => {
+        if (!date) {
+            return [];
+          }
+      
+        return generateDayTimeList(date).filter((time) => {
+            const timeHour = Number(time.split(":")[0]);
+            const timeMinutes = Number(time.split(":")[1]);
+      
+            const booking = dayBookings.find((booking) => {
+              const bookingHour = booking.date.getHours();
+              const bookingMinutes = booking.date.getMinutes();
+      
+              return bookingHour === timeHour && bookingMinutes === timeMinutes;
+            });
+      
+            if (!booking) {
+              return true;
+            }
+      
+            return false;
+        });
+    }, [date, dayBookings]);
+
+    
+
     const handleBookingClick = () => {
-        if (!isAuthenticator) 
+        if (!isAuthenticated) 
         return signIn("google")
     }
 
-    const handleDateClick = (date: Date | undefined) => {
-        setDate(date)
-        setHour(undefined)
-    }
-
-    const handleHourClick = (time: string) => {
-        setHour(time)
-
-    }
-
-    const timeList = useMemo(() => {
-        return date ? generateDayTimeList(date):[]
-    },[date]) 
-
     return ( 
         <Card>
-            <CardContent className="p-3">
-                <div className="flex gap-4 items-center">
+            <CardContent className="p-3 w-full">
+                <div className="flex gap-4 items-center w-full">
                     <div className="relative  min-h-[110px] min-w-[110px]  max-h-[110px] max-w-[110px]">
                       <Image className="rounded-lg"
                       src={service.imageUrl} 
@@ -109,7 +151,7 @@ const ServiceItem = ({service, barbershop, isAuthenticator}: serviceItemProps) =
                         <h2 className="font-bold">{service.name}</h2>
                         <p className="text-sm text-gray-400">{service.description}</p>
 
-                        <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center justify-between mt-3">
                             <p className="text-primary text-sm font-bold">
                             {Intl.NumberFormat("pt-BR", {
                             style: "currency",
@@ -164,40 +206,17 @@ const ServiceItem = ({service, barbershop, isAuthenticator}: serviceItemProps) =
                                         </div>
                                     )} 
                                   
-                                    <Card className="my-2 mx-2 pb-4">
-                                        <CardContent className="p-2 gap-3 flex flex-col">                                       
-                                            <div className="flex pt-5 justify-between">
-                                                <h2 className="font-bold">{service.name}</h2>
-                                                <h2 className="font-bold text-sm">{Intl.NumberFormat("pt-BR", {
-                                                    style: "currency",
-                                                    currency: "BRL",
-                                                    }).format(Number(service.price))}</h2>
-                                            </div>
-                                          
-                                          {date && (
-                                            <div className="flex justify-between">
-                                                <h3 className="text-sm text-gray-400">Data</h3>
-                                                <h4 className="text-sm capitalize">{format(new Date(), "dd 'de' MMMM",{locale: ptBR})}</h4>
-                                            </div>
-                                          )}
-
-                                          {hour && (
-                                            <div className="flex justify-between">
-                                                <h3 className="text-sm text-gray-400">Horário</h3>
-                                                <h4 className="text-sm capitalize">{hour}</h4>
-                                            </div>
-                                          )}
-
-                                            <div className="flex justify-between">
-                                                <h3 className="text-sm text-gray-400">Barbearia</h3>
-                                                <h4 className="text-sm capitalize">{barbershop.name}</h4>
-                                            </div>
-                                         
-                                        </CardContent>
-                                    </Card>
+                                    <BookingInfo booking={{
+                                        barbershop: barbershop,
+                                        date:
+                                        date && hour
+                                        ? setMinutes(setHours(date, Number(hour.split(":")[0])), Number(hour.split(":")[1]))
+                                        : undefined,
+                                        service: service,
+                                }}/>
                                    <SheetFooter className="px-5">
-                                   <Button onClick={handleBookingSubmit} disabled={!hour || !date || submitLoading}>
-                                            {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        <Button onClick={handleBookingSubmit} disabled={!hour || !date || submitIsLoading}>
+                                            {submitIsLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                             Confirmar Reserva                                           
                                         </Button>
                                    </SheetFooter>
@@ -205,8 +224,7 @@ const ServiceItem = ({service, barbershop, isAuthenticator}: serviceItemProps) =
                                 </SheetContent>
                             </Sheet>
 
-                        </div>
-                        
+                        </div>                     
                   </div>
                 </div>
             </CardContent>
