@@ -2,7 +2,6 @@
 
 import { Button } from "@/app/components/ui/button";
 import { Calendar } from "@/app/components/ui/calendar";
-import { Toaster } from "@/app/components/ui/sonner"
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/app/components/ui/sheet";
 import { Barbershop, Booking, Service } from "@prisma/client";
@@ -11,7 +10,7 @@ import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
 import React, { useEffect, useMemo, useState } from "react";
 import { generateDayTimeList } from "../helpers/hours";
-import { format, setHours, setMinutes } from "date-fns";
+import { addDays, format, setHours, setMinutes } from "date-fns";
 import { saveBooking } from "../actions/save-booking";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -51,7 +50,7 @@ const ServiceItem = ({service, barbershop, isAuthenticated}: serviceItemProps) =
             }
             
             const dateHour = Number(hour.split(":")[0])
-            const dateMinutes = Number(hour.split(":")[0])
+            const dateMinutes = Number(hour.split(":")[1])
 
             const newDate = setMinutes(setHours(date,dateHour), dateMinutes)
 
@@ -65,7 +64,7 @@ const ServiceItem = ({service, barbershop, isAuthenticated}: serviceItemProps) =
             setHour(undefined);
             setDate(undefined);
             toast("Reserva realizada com sucesso!",{
-                description: format(newDate,"'Para' dd 'de' MMMM 'às' HH ':' mm'.'",{ 
+                description: format(newDate,"'Para' dd 'de' MMMM 'às' HH':'mm'.'",{ 
                 locale:ptBR
                 }),
                 action:{ 
@@ -167,46 +166,53 @@ const ServiceItem = ({service, barbershop, isAuthenticated}: serviceItemProps) =
                                 </SheetTrigger>
 
                                 <SheetContent className="p-0">
-                                    <SheetHeader className="text-left px-5 py-3 mb-5 border-b border-secondary">
+                                    <SheetHeader className="text-left px-5 py-3 border-b border-solid border-secondary">
                                         <SheetTitle>Fazer reserva</SheetTitle>
                                     </SheetHeader>
 
-                                    <Calendar mode="single"
-                                    selected={date} onSelect={handleDateClick} locale={ptBR} fromDate={new Date()} styles={{
-                                        head_cell: {
+                                    <div className="p-6">
+                                        <Calendar
+                                        mode="single"
+                                        selected={date}
+                                        onSelect={handleDateClick}
+                                        locale={ptBR}
+                                        fromDate={addDays(new Date(), 1)}
+                                        styles={{
+                                            head_cell: {
                                             width: "100%",
                                             textTransform: "capitalize",
-                                        },
-                                        cell: {
+                                            },
+                                            cell: {
                                             width: "100%",
-                                        },
-                                        nav_button_previous: {
+                                            },
+                                            button: {
+                                            width: "100%",
+                                            },
+                                            nav_button_previous: {
                                             width: "32px",
                                             height: "32px",
-                                        },
-                                        nav_button_next: {
+                                            },
+                                            nav_button_next: {
                                             width: "32px",
                                             height: "32px",
-                                        },
-                                        button: {
-                                            width: "100%",
-                                        },
-                                        caption: {
-                                            textTransform: "capitalize"
-                                        }
-                                    }}     
-                                    />
+                                            },
+                                            caption: {
+                                            textTransform: "capitalize",
+                                            },
+                                        }}
+                                        />
+                                    </div>
                                     {/*Mostrar horário apenas se a data estive selecionad */} 
                                     {date && (
-                                        <div className=" flex gap-3 overflow-x-auto py-6 px-5 border-y border-secondary  [&::-webkit-scrollbar]:hidden">
+                                        <div className=" flex gap-3 overflow-x-auto py-6 px-5 border-t border-secondary  border-solid [&::-webkit-scrollbar]:hidden">
                                             {timeList.map((time) => (
-                                                <Button onClick={() => handleHourClick(time)}variant={hour === time ? "default" : "outline"}className="rounded-full" key={time}> {time} </Button>
+                                                <Button onClick={() => handleHourClick(time)} variant={hour === time ? "default" : "outline"}className="rounded-full" key={time}> {time} </Button>
                                             ))}
                                             
                                         </div>
                                     )} 
-                                  
-                                    <BookingInfo booking={{
+                                    <div className="py-6 px-5 border-t border-solid border-secondary">
+                                      <BookingInfo booking={{
                                         barbershop: barbershop,
                                         date:
                                         date && hour
@@ -214,6 +220,8 @@ const ServiceItem = ({service, barbershop, isAuthenticated}: serviceItemProps) =
                                         : undefined,
                                         service: service,
                                 }}/>
+                                    </div>
+                                    
                                    <SheetFooter className="px-5">
                                         <Button onClick={handleBookingSubmit} disabled={!hour || !date || submitIsLoading}>
                                             {submitIsLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
