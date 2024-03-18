@@ -1,4 +1,6 @@
-import { format, isFuture, isPast } from "date-fns";
+"use client"
+
+import { format, isFuture } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
@@ -8,6 +10,10 @@ import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle, 
 import Image from "next/image";
 import BookingInfo from "./booking-info";
 import { Button } from "./ui/button";
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
+import { cancelBookings } from "../actions/cancel-bookings";
+import { toast } from "sonner";
 
 interface BarbershopItemProps {
     booking: Prisma.BookingGetPayload<{
@@ -19,7 +25,23 @@ interface BarbershopItemProps {
 }
 
 const BookingItem = ({booking}: BarbershopItemProps) => {
+
     const isBookingConfirmed = isFuture(booking.date)
+
+    const [isDeleteLoading, setIsDeleteLoading] = useState(false)
+
+    const handleDeleteClick = async () => {
+        setIsDeleteLoading(true)
+
+        try {
+            await cancelBookings(booking.id)  
+            toast.success("Reserva cancelada com sucesso!")  
+        } catch (error) {
+            console.error(error)
+        } finally{
+            setIsDeleteLoading(false)
+        }
+    }
 
     return ( 
         <Sheet>
@@ -85,7 +107,8 @@ const BookingItem = ({booking}: BarbershopItemProps) => {
                                     Voltar
                                 </Button>
                             </SheetClose>
-                            <Button disabled={!isBookingConfirmed} className="w-full" variant={"destructive"}>
+                            <Button onClick={handleDeleteClick} disabled={!isBookingConfirmed ||isDeleteLoading} className="w-full" variant={"destructive"}>
+                            {isDeleteLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Cancelar
                             </Button>
                     </SheetFooter>
