@@ -10,5 +10,5 @@ export const cancelBookings = async (bookingId: string) => {
         },
     })
 }
- 
+revalidatePath("/")
 revalidatePath("/bookings")

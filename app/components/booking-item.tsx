@@ -14,6 +14,7 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { cancelBookings } from "../actions/cancel-bookings";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 
 interface BarbershopItemProps {
     booking: Prisma.BookingGetPayload<{
@@ -76,7 +77,7 @@ const BookingItem = ({booking}: BarbershopItemProps) => {
 
             <SheetContent className="px-0">
                 <SheetHeader className="text-left py-6 px-5 border-b border-secondary">
-                    <SheetTitle>Informações da Reserva </SheetTitle>
+                    <SheetTitle>Informações da Reserva</SheetTitle>
                 </SheetHeader>
                 
                 <div className="px-5">
@@ -107,10 +108,33 @@ const BookingItem = ({booking}: BarbershopItemProps) => {
                                     Voltar
                                 </Button>
                             </SheetClose>
-                            <Button onClick={handleDeleteClick} disabled={!isBookingConfirmed ||isDeleteLoading} className="w-full" variant={"destructive"}>
-                            {isDeleteLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Cancelar
-                            </Button>
+
+                            <AlertDialog>
+                             <AlertDialogTrigger asChild>
+                                
+                                <Button disabled={!isBookingConfirmed ||isDeleteLoading} className="w-full" variant={"destructive"}>
+                                    Cancelar
+                                </Button>
+                             </AlertDialogTrigger>
+                                <AlertDialogContent className="w-[90%">
+
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Tem certeza que deseja cancelar a reserva?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Depois de cancelado não tem como reverte essa ação
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+
+                                    <AlertDialogFooter >
+                                      <AlertDialogCancel className="w-full">Voltar</AlertDialogCancel>
+                                      <AlertDialogAction disabled={isDeleteLoading}  onClick={handleDeleteClick} className="w-full"
+                                      >{isDeleteLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Confirmar</AlertDialogAction>
+                                    </AlertDialogFooter>
+
+                                </AlertDialogContent>
+                            </AlertDialog>
+
                     </SheetFooter>
                 </div>
             </SheetContent>
