@@ -69,7 +69,7 @@ const BookingItem = ({booking}: BarbershopItemProps) => {
                 })} </p>
                         <p className="text-xl">{format(booking.date, "dd", {
                 locale:ptBR,})}</p>
-                        <p className="text-sm">{format(booking.date, "HH:mm")}</p>
+                        <p className="text-sm">{format(booking.date, "hh:mm")}</p>
                     </div>
                     </CardContent>
                 </Card>
