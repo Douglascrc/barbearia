@@ -21,5 +21,5 @@ export const authOptions: AuthOptions = {adapter:PrismaAdapter(db) as Adapter,
         return session
       }
     },
-    secret: process.env.NEXT_AUTH_URL,
+    secret: process.env.NEXT_AUTH_SECRET,
 }
