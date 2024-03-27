@@ -1,16 +1,58 @@
 "use client";
 
-import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { SearchIcon } from "lucide-react";
+import { Button } from "@/app/components/ui/button"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/app/components/ui/form"
+import { Input } from "@/app/components/ui/input"
+import { SearchIcon } from "lucide-react"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useRouter } from "next/navigation";
+ 
+const formSchema = z.object({
+  search: z.string({
+    required_error: "Campo obrigatório",
+  }).trim().min(1, "Campo obrigatório."),
+})
 
-const Search = () => {
+interface SearchProps {
+    defaultValues?: z.infer<typeof formSchema>;
+  }
+
+const Search = ({defaultValues}: SearchProps) => {
+
+    const router = useRouter()
+
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+        defaultValues,
+    })
+
+    const handleSubmit = (data: z.infer<typeof formSchema>)=> { 
+        router.push(`/babershops?search=${data.search}`)
+}
+
     return (
         <div className="flex">
-            <Input placeholder="Busque uma barbearia"/>
-            <Button className="ml-2"variant={"default"} size={"icon"}  >
-                <SearchIcon size={18}/>
-            </Button>
+           
+            <Form {...form}>
+             <form className="flex w-full gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
+              <FormField control={form.control} name="search" render={({field}) => (
+               <FormItem>
+                    <FormLabel />
+                <FormControl>
+                  <Input placeholder="Busque uma barbearia..."{...field}/>
+                </FormControl>
+                <FormDescription />
+                <FormMessage />
+               </FormItem>
+                )}
+                />
+              <Button className="ml-2"variant={"default"} size={"icon"}  >
+                <SearchIcon size={20}/>
+              </Button>
+             </form>
+            </Form>
         </div>
       );
 }
